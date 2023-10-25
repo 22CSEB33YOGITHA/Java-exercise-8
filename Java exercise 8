@@ -1,0 +1,132 @@
+//Team 7
+
+//1. Generating random number and perform operation based on whether it is odd or even
+
+import java.util.Random;
+class RandomNumberGenerator extends Thread {
+    public void run() {
+        Random random = new Random();
+        while (true) {
+            int number = random.nextInt(100);
+            System.out.println("Generated: " + number);
+            if (number % 2 == 0) {
+                SquareThread squareThread = new SquareThread(number);
+                squareThread.start();
+            } else {
+                CubeThread cubeThread = new CubeThread(number);
+                cubeThread.start();
+            }
+            
+            try {
+                Thread.sleep(1000); // Sleep for 1 second
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+
+class SquareThread extends Thread {
+    private int number;
+    
+    public SquareThread(int number) {
+        this.number = number;
+    }
+    public void run() {
+        int square = number * number;
+        System.out.println("Square: " + square);
+    }
+}
+class CubeThread extends Thread {
+    private int number;
+    
+    public CubeThread(int number) {
+        this.number = number;
+    }
+    public void run() {
+        int cube = number * number * number;
+        System.out.println("Cube: " + cube);
+    }
+}
+public class MultiThreadExample {
+    public static void main(String[] args) {
+        RandomNumberGenerator randomGenerator = new RandomNumberGenerator();
+        randomGenerator.start();
+    }
+}
+
+
+//2. Producer-Consumer
+
+class Q {
+    private int n;
+    private boolean valueSet = false;
+
+    public synchronized int get() {
+        while (!valueSet) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                System.out.println("InterruptedException caught");
+            }
+        }
+        System.out.println("Got: " + n);
+        valueSet = false;
+        notify();
+        return n;
+    }
+
+    public synchronized void put(int n) {
+        while (valueSet) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                System.out.println("InterruptedException caught");
+            }
+        }
+        this.n = n;
+        valueSet = true;
+        System.out.println("Put: " + n);
+        notify();
+    }
+}
+
+class Producer implements Runnable {
+    private Q q;
+
+    public Producer(Q q) {
+        this.q = q;
+        new Thread(this, "Producer").start();
+    }
+
+    public void run() {
+        int i = 0;
+        while (true) {
+            q.put(i++);
+        }
+    }
+}
+
+class Consumer implements Runnable {
+    private Q q;
+
+    public Consumer(Q q) {
+        this.q = q;
+        new Thread(this, "Consumer").start();
+    }
+
+    public void run() {
+        while (true) {
+            q.get();
+        }
+    }
+}
+
+public class PC {
+    public static void main(String args[]) {
+        Q q = new Q();
+        new Producer(q);
+        new Consumer(q);
+        System.out.println("Press Control-C to stop.");
+    }
+}
